@@ -1,8 +1,9 @@
 import asyncio
 from dotenv import load_dotenv
 from livekit import agents
-from livekit.agents import AgentServer, Agent, AgentSession, room_io
+from livekit.agents import AgentServer, Agent, AgentSession, TurnHandlingOptions, room_io
 from livekit.plugins import deepgram
+from livekit.plugins.turn_detector.multilingual import MultilingualModel
 
 load_dotenv()
 
@@ -15,8 +16,12 @@ async def my_agent(ctx: agents.JobContext):
     session = AgentSession(
         stt=deepgram.STT(
             model="nova-3",
-            language="en",
+            language="multi",  # lets Deepgram auto-detect/switch between languages
         ),
+            turn_handling=TurnHandlingOptions(
+                 turn_detection=MultilingualModel(),   # runs locally, no cloud round-trip
+             ),
+
     )
 
     @session.on("user_input_transcribed")
