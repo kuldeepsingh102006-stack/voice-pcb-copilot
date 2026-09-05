@@ -1,3 +1,4 @@
+import asyncio
 from dotenv import load_dotenv
 from livekit import agents
 from livekit.agents import AgentServer, Agent, AgentSession, inference, room_io
@@ -12,11 +13,19 @@ async def my_agent(ctx: agents.JobContext):
 
     session = AgentSession(
         stt=inference.STT(
-    model="deepgram/nova-3",
-    language="en-IN",
-    endpointing_ms=100,
-),
+            model="deepgram/nova-3",
+            language="en-IN",
+        ),
     )
+
+    @session.on("user_input_transcribed")
+    def on_transcript(ev):
+        # Partial (still-recognizing) text goes on one topic,
+        # fully finalized sentences go on a separate topic.
+        topic = "lk.final-transcript" if ev.is_final else "lk.live-partial"
+        asyncio.create_task(
+            ctx.room.local_participant.send_text(ev.transcript, topic=topic)
+        )
 
     await session.start(
         agent=Agent(

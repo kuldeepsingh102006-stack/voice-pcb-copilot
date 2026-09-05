@@ -3,7 +3,8 @@ import { Room, RoomEvent } from "livekit-client";
 
 function App() {
   const [connected, setConnected] = useState(false);
-  const [transcript, setTranscript] = useState("");
+  const [history, setHistory] = useState("");
+  const [liveText, setLiveText] = useState("");
 
   const connectToRoom = async () => {
     try {
@@ -23,19 +24,26 @@ function App() {
         setConnected(false);
       });
 
-     room.registerTextStreamHandler("lk.transcription", async (reader) => {
-  let text = "";
+      // Partial / still-being-recognized text — updates live, never saved permanently
+      room.registerTextStreamHandler("lk.live-partial", async (reader) => {
+        let text = "";
+        for await (const chunk of reader) {
+          text = chunk;
+          console.log("PARTIAL:", text);
+        }
+        setLiveText(text);
+      });
 
-  for await (const chunk of reader) {
-    text = chunk;
-
-    console.log("LIVE TRANSCRIPT:", text);
-
-    setTranscript(text);
-  }
-
-  console.log("TRANSCRIPTION STREAM COMPLETE");
-});
+      // Finalized sentence — committed permanently to history, exactly once
+      room.registerTextStreamHandler("lk.final-transcript", async (reader) => {
+        let text = "";
+        for await (const chunk of reader) {
+          text = chunk;
+        }
+        console.log("FINAL:", text);
+        setHistory((prev) => (prev ? prev + " " + text : text));
+        setLiveText("");
+      });
 
       // Connect to LiveKit
       await room.connect(
@@ -69,7 +77,8 @@ function App() {
       <h2>Live Transcript</h2>
 
       <div>
-        {transcript || "Start speaking..."}
+        {history} <span style={{ opacity: 0.6 }}>{liveText}</span>
+        {!history && !liveText && "Start speaking..."}
       </div>
     </div>
   );
