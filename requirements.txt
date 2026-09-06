@@ -37,6 +37,9 @@ livekit-api==1.2.1
 livekit-blingfire==1.1.0
 livekit-local-inference==0.2.7
 livekit-plugins-deepgram==1.8.0
+livekit-plugins-groq==1.8.0
+livekit-plugins-openai==1.8.0
+livekit-plugins-rime==1.8.0
 livekit-plugins-turn-detector==1.8.0
 livekit-protocol==1.1.26
 markdown-it-py==4.2.0
@@ -56,6 +59,7 @@ opentelemetry-proto==1.44.0
 opentelemetry-sdk==1.44.0
 opentelemetry-semantic-conventions==0.65b0
 packaging==26.3
+pillow==12.3.0
 prometheus_client==0.26.0
 propcache==0.5.2
 protobuf==7.36.1
@@ -85,4 +89,5 @@ typing_extensions==4.16.0
 urllib3==2.7.0
 uvicorn==0.52.4
 watchfiles==1.2.0
+websockets==15.0.1
 yarl==1.24.5

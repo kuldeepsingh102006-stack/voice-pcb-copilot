@@ -24,6 +24,14 @@ function App() {
         setConnected(false);
       });
 
+      // Play the agent's voice — without this, audio silently never plays
+      room.on(RoomEvent.TrackSubscribed, (track) => {
+        if (track.kind === "audio") {
+          const audioElement = track.attach();
+          document.body.appendChild(audioElement);
+        }
+      });
+      
       // Partial / still-being-recognized text — updates live, never saved permanently
       room.registerTextStreamHandler("lk.live-partial", async (reader) => {
         let text = "";
