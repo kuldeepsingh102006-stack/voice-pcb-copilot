@@ -21,7 +21,6 @@ function App() {
   const [entries, setEntries] = useState([]); // finalized transcript lines
   const [liveText, setLiveText] = useState("");
   const [mentioned, setMentioned] = useState(new Set());
-  const [roomName, setRoomName] = useState(null); // set when connected
 
   // Upload state
   const [schFile, setSchFile] = useState(null);
@@ -66,7 +65,10 @@ function App() {
     })
       .then((res) => {
         if (res.status === 401) {
-          handleLogout();
+          localStorage.removeItem("pcb_auth_token");
+          localStorage.removeItem("pcb_auth_user");
+          setAuthToken("");
+          setAuthUser("");
         }
       })
       .catch(() => {
@@ -125,7 +127,6 @@ function App() {
 
   const disconnect = async () => {
     await roomRef.current?.disconnect();
-    setRoomName(null);
     setUploadStatus(null);
     setSchFile(null);
     setPcbFile(null);
@@ -157,7 +158,6 @@ function App() {
       room.on(RoomEvent.Disconnected, () => {
         setPhase("idle");
         cleanupAudio();
-        setRoomName(null);
       });
 
       room.on(RoomEvent.TrackSubscribed, (track) => {
@@ -186,7 +186,23 @@ function App() {
         flagMentions(text);
       });
 
-      // Agent's spoken reply text — sent back from agent_speech_committed
+      room.registerTextStreamHandler("lk.user-response", async (reader) => {
+        let text = "";
+        for await (const chunk of reader) text = chunk;
+        if (!text) return;
+
+        setEntries((prev) => {
+          const last = prev[prev.length - 1];
+          if (last?.isUser && last.text === text) return prev;
+          return [
+            ...prev,
+            { id: nextIdRef.current++, text, ts: new Date(), isUser: true },
+          ];
+        });
+        setLiveText("");
+        flagMentions(text);
+      });
+
       room.registerTextStreamHandler("lk.agent-response", async (reader) => {
         let text = "";
         for await (const chunk of reader) text = chunk;
@@ -200,7 +216,6 @@ function App() {
 
       await room.connect(LIVEKIT_URL, data.token);
       await room.localParticipant.setMicrophoneEnabled(true);
-      setRoomName(room.name);
       setPhase("live");
     } catch (err) {
       console.error("Connection failed:", err);

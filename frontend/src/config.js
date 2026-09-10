@@ -1,7 +1,7 @@
 // Centralized Configuration for Frontend
 
 export const BACKEND_URL = (
-  import.meta.env.VITE_BACKEND_URL || "https://voice-pcb-copilot.onrender.com"
+  "http://localhost:8000/"
 ).replace(/\/$/, "");
 
 export const LIVEKIT_URL =

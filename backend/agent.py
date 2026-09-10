@@ -91,14 +91,19 @@ async def my_agent(ctx: agents.JobContext):
             ctx.room.local_participant.send_text(ev.transcript, topic=topic)
         )
 
-    # Send the agent's spoken reply text back to the frontend so it appears
-    # in the transcript panel alongside the user's speech.
-    @session.on("agent_speech_committed")
-    def on_agent_speech(ev):
-        text = getattr(ev, "text", None) or getattr(ev, "transcript", None)
+    # Send committed assistant messages back to the frontend transcript.
+    @session.on("conversation_item_added")
+    def on_conversation_item(ev):
+        item = ev.item
+        role = getattr(item, "role", None)
+        if role not in {"user", "assistant"}:
+            return
+
+        text = getattr(item, "raw_text_content", None)
         if text:
+            topic = "lk.user-response" if role == "user" else "lk.agent-response"
             asyncio.create_task(
-                ctx.room.local_participant.send_text(text, topic="lk.agent-response")
+                ctx.room.local_participant.send_text(text, topic=topic)
             )
 
     # ------------------------------------------------------------------
